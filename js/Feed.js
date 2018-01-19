@@ -12,9 +12,12 @@ type State = {
 }
 
 type DataRow = {
-  baseCurrency: string,
-  targetCurrency: string,
-  rate: string
+  time: number,
+  low: number,
+  high: number,
+  open: number,
+  close: number,
+  volume: number
 }
 export default class Feed extends Component<Object, State> {
   constructor(props: Object) {
@@ -33,7 +36,7 @@ export default class Feed extends Component<Object, State> {
       <FlatList
         data={this.state.data}
         renderItem={this.renderItem.bind(this)}
-        keyExtractor={(item: DataRow, index: number) => item.targetCurrency}
+        keyExtractor={(item: DataRow, index: number) => String(index)}
         onRefresh={this.handleRefresh.bind(this)}
         refreshing={this.state.refreshing}
       />
@@ -41,9 +44,9 @@ export default class Feed extends Component<Object, State> {
   }
 
   fetchData() {
-    fetch("https://api.coinbase.com/v2/exchange-rates?currency=BTC")
+    fetch("https://api.gdax.com/products/ETH-USD/candles?granularity=60")
       .then((response) => response.json())
-      .then((responseJson) => this._parseExchangeRates(responseJson))
+      .then((responseJson) => this._parseCandles(responseJson))
       .then((rows) =>
         this.setState({
           isLoading: false,
@@ -53,23 +56,18 @@ export default class Feed extends Component<Object, State> {
       )
   }
 
-  _parseExchangeRates(json: Object) {
-    let data = json.data;
-    let baseCurrency = data.currency
-    console.log(baseCurrency)
-    let rates = data.rates
-    let rows: Array<DataRow> = [];
-    for (var key in rates) {
-      if(!rates.hasOwnProperty(key)) continue;
-
-      let row: DataRow = {
-          baseCurrency: baseCurrency,
-          targetCurrency: key,
-          rate: rates[key]
-      }
-      rows.push(row)
-    }
-
+  _parseCandles(candlesJson: Object): Array<DataRow> {
+    let rows: Array<DataRow> = candlesJson.map((candle) => {
+      let candleRow: DataRow = {
+        time : candle[0],
+        low : candle[1],
+        high : candle[2],
+        open : candle[3],
+        close : candle[4],
+        volume : candle[5]
+      };
+      return candleRow;
+    })
     return rows;
   }
   componentDidMount() {
@@ -81,9 +79,10 @@ export default class Feed extends Component<Object, State> {
     this.fetchData();
   }
   renderItem(args: Object) {
+    let item: DataRow = args.item
     return (
       <Text>
-        {args.item.baseCurrency + " - " + args.item.targetCurrency + " - " + args.item.rate}
+        {item.time + " - " + item.open + " - " + item.close}
       </Text>
     );
   }
