@@ -19,7 +19,19 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
-export default class App extends Component<{}> {
+type State = {
+  json: string
+}
+
+export default class App extends Component<void, State> {
+
+  constructor(props: void) {
+    super(props);
+    this.state = {
+      json: "hellooooo"
+    }
+  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -32,8 +44,19 @@ export default class App extends Component<{}> {
         <Text style={styles.instructions}>
           {instructions}
         </Text>
+        <Text style={styles.instructions}>
+          {this.state.json}
+        </Text>
       </View>
     );
+  }
+
+  componentDidMount() {
+    fetch("https://api.coinbase.com/v2/currencies")
+      .then((response) => response.json())
+      .then((responseJson) => {
+        this.setState({json: JSON.stringify(responseJson)})
+      })
   }
 }
 
